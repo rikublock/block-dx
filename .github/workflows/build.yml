@@ -1,0 +1,39 @@
+name: build-all
+
+on:
+  push:
+    branches:
+      - dev
+      - riku/**
+  pull_request:
+    branches:
+      - dev
+
+jobs:
+  build_linux:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        node: [ 12, 14, 16, 18 ]
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v3
+        if: github.event.pull_request.draft == false
+        
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+
+      - run: |
+          echo GIT_BRANCH="${{ github.ref_name }}" > electron-builder.env
+          npm install --no-audit
+          npm run build-native-linux
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: artifacts-linux
+          path: |
+            dist-native/*.tar.gz
+            dist-native/*.AppImage
+            dist-native/*.deb
